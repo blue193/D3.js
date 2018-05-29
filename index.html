@@ -38,7 +38,7 @@
         function calcHypotenuse(x1, y1, x2, y2) {
             return Math.sqrt((x2-x1) * (x2-x1) + (y2-y1) * (y2-y1));
         }
-
+        // Check the point is in triangle, if yes return true, if no return false
         function is_in_triangle(px,py,ax,ay,bx,by,cx,cy){
 
             var v0 = [cx-ax,cy-ay];
@@ -58,7 +58,8 @@
 
             return ((u >= 0) && (v >= 0) && (u + v < 1));
         }
-        
+        // Check the point is inside rectangle, if yes return true, if no return false
+        // z1 top, z2 left, z3 right, z4 bottom
         function isInside(x, y, z1, z2, z3, z4) {
             x1 = Math.min(z1, z3);
             x2 = Math.max(z1, z3);
@@ -70,7 +71,7 @@
                 return false;
             };
         };
-
+        // sine function using degree instead of radian as a parameter
         Math.dsin = function() {
             var piRatio = Math.PI / 180;
             return function dsin(degrees) {
@@ -103,7 +104,7 @@
                     data[index][j]['Count'] = 400 + distance*j;
                     innArr.push(data[index][j]);
                 }
-            }                                
+            }
             Object.assign(dataset,  {["children"]: innArr} );
             var color = d3.scaleOrdinal(d3.schemeCategory20);
             var bubble = d3.pack(dataset)
@@ -142,8 +143,7 @@
                 var index2 = router[k].end;
                 var amplitude = 2.5;
                 var increase = Math.PI/2 , counter=Math.PI/2, alpha = 0;
-                // console.log("lineData", lineData);
-                // console.log("rectInfo", rectInfo);
+                
                 radius = calcHypotenuse( lineData[index1-1].x, lineData[index1-1].y, lineData[index2-1].x, lineData[index2-1].y) / 8;
                 for(i=0; i<=140; i+=15){ 
                     deltaX = (lineData[index2-1].x - lineData[index1-1].x) * i / 180;
