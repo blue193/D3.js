@@ -208,7 +208,12 @@
                             return "pointer";
                         else
                             return "default";})
-                    .style("filter", function(d) { return "url(#f1)"})
+                    .style("filter", function(d) {
+                        if (typeof d.data.label == "undefined")
+                         return "url(#f1)";
+                        else
+                            return ;
+                    })
                     .on("click", function(d){
                         if( typeof d.data.link !== "undefined" )
                             window.location.href = d.data.link;
@@ -275,7 +280,7 @@
             <defs>
                 <filter id="f1" x="0" y="0" width="200%" height="200%">
                 <feOffset result="offOut" in="SourceGraphic" dx="20" dy="20" />
-                <feGaussianBlur result="blurOut" in="offOut" stdDeviation="5" />
+                <feGaussianBlur result="blurOut" in="offOut" stdDeviation="14" />
                 <feBlend in="SourceGraphic" in2="blurOut" mode="normal" />
                 </filter>
             </defs>
