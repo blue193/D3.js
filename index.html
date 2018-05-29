@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Collage Project</title>
+        <style type="text/css" media="screen">
+            @font-face {
+                font-family: myFirstFont;
+                src: url("fonts/Honeyquik/honeyquick.ttf")format('ttf');
+                src: url('fonts/Honeyquick/honeyquick.svg') format('svg');
+                src: url('fonts/Honeyquick/honeyquick.woff') format('woff');
+            }
+            .rectGroup {
+                font-family: myFirstFont;
+            }
+            .material-icons.md-18 { font-size: 45px; }
+        </style>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+        <script defer src="https://use.fontawesome.com/releases/v5.0.6/js/all.js"></script>
+        <script src="https://d3js.org/d3.v3.min.js"></script>
+        <script src="https://d3js.org/d3.v4.min.js"></script>
+    </head>
+    <script type="text/javascript">
+        dataset = [];
+        imageRadius = 32;
+        distance = 130;
+        diameter = 1500;
+        firstImgRadius = 207;
+        rectInfo = [];
+        ptPlus = [];
+        
+        function calcOffset() {
+            // return random integer from -1, 0, 1
+            rand = Math.floor(Math.random()*7)%3;
+            return rand - 1;
+        }
+        
+        function calcHypotenuse(x1, y1, x2, y2) {
+            return Math.sqrt((x2-x1) * (x2-x1) + (y2-y1) * (y2-y1));
+        }
+
+        function is_in_triangle(px,py,ax,ay,bx,by,cx,cy){
+
+            var v0 = [cx-ax,cy-ay];
+            var v1 = [bx-ax,by-ay];
+            var v2 = [px-ax,py-ay];
+
+            var dot00 = (v0[0]*v0[0]) + (v0[1]*v0[1]);
+            var dot01 = (v0[0]*v1[0]) + (v0[1]*v1[1]);
+            var dot02 = (v0[0]*v2[0]) + (v0[1]*v2[1]);
+            var dot11 = (v1[0]*v1[0]) + (v1[1]*v1[1]);
+            var dot12 = (v1[0]*v2[0]) + (v1[1]*v2[1]);
+
+            var invDenom = 1/ (dot00 * dot11 - dot01 * dot01);
+
+            var u = (dot11 * dot02 - dot01 * dot12) * invDenom;
+            var v = (dot00 * dot12 - dot01 * dot02) * invDenom;
+
+            return ((u >= 0) && (v >= 0) && (u + v < 1));
+        }
+        
+        function isInside(x, y, z1, z2, z3, z4) {
+            x1 = Math.min(z1, z3);
+            x2 = Math.max(z1, z3);
+            y1 = Math.min(z2, z4);
+            y2 = Math.max(z2, z4);
+            if ((x1 <= x ) && ( x <= x2) && (y1 <= y) && (y <= y2)) {
+                return true;
+            } else {
+                return false;
+            };
+        };
+
+        Math.dsin = function() {
+            var piRatio = Math.PI / 180;
+            return function dsin(degrees) {
+                return Math.sin(degrees * piRatio);
+            };
+        }();
+
+        d3.json("data/example1.json", function(error, data) {
+            if (error) throw error;
+            var innArr = [], router = [], lineData = []
+            data_keys = Object.keys(data);
+
+            for (var i = 0; i < data_keys.length; i++){
+                let index = data_keys[i];
+                
+                if( index == "router" ){
+                    var n_router = data[index].length;
+                    for (var p = 0; p < n_router; p++)
+                        router.push(data[index][p]);
+                    continue;
+                }
+
+                if ( index == "picture") {
+                    innArr.push({"image":data[index], "r":firstImgRadius, "Count": 750});
+                    continue;
+                }
+                for (var j = 0; j < data[index].length; j++){
+                    data[index][j]['type'] = index;
+                    data[index][j]['r'] = (4.5 + Math.random() * 1.5 ) * imageRadius;
+                    data[index][j]['Count'] = 400 + distance*j;
+                    innArr.push(data[index][j]);
+                }
+            }                                
+            Object.assign(dataset,  {["children"]: innArr} );
+            var color = d3.scaleOrdinal(d3.schemeCategory20);
+            var bubble = d3.pack(dataset)
+                .size([diameter , diameter])
+                .padding( 30 );
+            var lineFunction = d3.svg.line()
+                            .x(function(d) { return d.x; })
+                            .y(function(d) { return d.y; })
+                            .interpolate("cardinal");                                                    
+            var svg = d3.select("body")
+                            .append("svg")
+                                .attr("width", diameter)
+                                .attr("height", diameter)
+                                .attr("class", "bubble");
+            // increase 'Count'                              
+            var nodes = d3.hierarchy(dataset)
+            .sum(function(d) {
+                return d.Count+(Math.floor(Math.random() * 80))*10;
+            });       
+            // get position of node
+            var node = svg.selectAll(".node")
+                .data(bubble(nodes).descendants())
+                .enter()
+                .filter(function(d){ return  !d.children })
+                .append("g")
+                .attr("class", "node")
+                .attr("transform", function(d) {
+                    lineData.push({"x":d.x, "y":d.y});
+                    return "translate(" + d.x + "," + d.y + ")";
+                });            
+            // TODO: Draw line
+            for (var k = 0; k < router.length; k++)
+            {
+                var drawLine = [];
+                var index1 = router[k].start;
+                var index2 = router[k].end;
+                var amplitude = 2.5;
+                var increase = Math.PI/2 , counter=Math.PI/2, alpha = 0;
+                // console.log("lineData", lineData);
+                // console.log("rectInfo", rectInfo);
+                radius = calcHypotenuse( lineData[index1-1].x, lineData[index1-1].y, lineData[index2-1].x, lineData[index2-1].y) / 8;
+                for(i=0; i<=140; i+=15){ 
+                    deltaX = (lineData[index2-1].x - lineData[index1-1].x) * i / 180;
+                    offsetY = (lineData[index2-1].y - lineData[index1-1].y ) / (lineData[index2-1].x - lineData[index1-1].x) * deltaX; 
+                    deltaY=  Math.sin(counter / amplitude ) * radius + offsetY;
+                    counter += increase ;
+                    let direction = 1;
+                    if(lineData[index2-1].x < lineData[index1-1].x )
+                        direction = -1;
+                    middle = {x: lineData[index1-1].x + deltaX, y: lineData[index1-1].y + deltaY};
+                    drawLine.push( middle);
+                }
+                svg.append("path")
+                    .attr("d", lineFunction(drawLine))
+                    .attr("stroke-linecap", "round")
+                    .attr("stroke-dasharray", "5,5,5")
+                    .attr("stroke", "#7a7a7a")
+                    .attr("stroke-width", 2)
+                    .attr('stroke-opacity', 0.8)
+                    .attr("pointer-events", "none")
+                    .attr("fill", "none")
+                    .attr("marker-end", function(d) { return "url(#Triangle)"});
+            }
+            // TODO: Appending pattern
+            defs = node.append('pattern')
+                    .attr("id", function(d, i) { return "img_"+i })
+                    .attr("patternContentUnits", "objectBoundingBox")
+                    .attr("preserveAspectRatio", "xMidYMid slice")
+                    .attr("width", "100%")
+                    .attr("height", "100%")
+                    .append("image")
+                        .attr("xlink:href", function( d ){ return d.data.image })
+                        .attr("x", 0)
+                        .attr("y", 0)
+                        .attr("width", "1")
+                        .attr("height", "1");
+            
+            // TODO: Drawing elements and shapes
+            var group = node.append("g")
+                .attr("class", "rectGroup")
+                .attr("transform", function(d){ return "rotate("+ (Math.random() * 50-30) +")"});
+                group.append("rect")
+                    .attr("width", function(d){ return d.data.r - 10; })
+                    .attr("height",function(d){ return d.data.r - 10; })
+                    .attr("x", function(d){ return -d.data.r/2 ; })
+                    .attr("y", function(d){ return -d.data.r/2 ; })
+                    .style("fill", function(d,i) {
+                        rect = this.getBoundingClientRect();
+                        rectCenter = {x: (rect.left + rect.right)/ 2 , y: (rect.top + rect.bottom)/2, 
+                                        left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom,
+                                        width: rect.right - rect.left, height: rect.bottom - rect.top};
+                        // rectInfo is rect info such as center and width and height
+                        rectInfo.push(rectCenter);
+                        if( d.data.image ){
+                            url = "url('#img_"+ i +"')";
+                            return url;}
+                        else
+                            return color(i);
+                    })
+                    .style("cursor", function(d){
+                        if( typeof d.data.link !== "undefined" )
+                            return "pointer";
+                        else
+                            return "default";})
+                    .style("filter", function(d) { return "url(#f1)"})
+                    .on("click", function(d){
+                        if( typeof d.data.link !== "undefined" )
+                            window.location.href = d.data.link;
+                    })
+                    .on("mouseenter", function(d) {
+                        console.log("mouseenter");
+                        this.parentElement.appendChild(this);
+                    });
+                    // TODO: get middle point
+
+                    for (var i = 0; i < lineData.length - 3; i++)
+                    {
+                        let isEnable = 1;
+                        for (var j = i + 3; j<lineData.length; j++)
+                        {
+                            o = is_in_triangle(lineData[j].x, lineData[j].y, 
+                                lineData[0].x, lineData[0].y,
+                                lineData[i+1].x, lineData[i+1].y,
+                                lineData[i+2].x, lineData[i+2].y);
+                            if (o) {
+                                isEnable = 0;
+                            }        
+                        }
+                        if( isEnable == 1 ){
+                            x0 = lineData[i+1].x + (lineData[i+2].x - lineData[i+1].x)/2;
+                            y0 = lineData[i+1].y + (lineData[i+2].y - lineData[i+1].y)/2;
+                            p_x = x0 + (lineData[i+2].x - x0)/2;
+                            p_y = y0 + (lineData[i+2].y - y0)/2;
+                            p_plus = {x: p_x, y: p_y};
+                            ptPlus.push(p_plus);
+                        }
+                    }
+                    // TODO: Draw plus symbol
+                    nPlus = Math.floor(lineData.length/4);
+                    for (var k = 1; k < nPlus+1; k++)
+                    {
+                        for (var j = 0 ; j < lineData.length; j++)
+                            if (!isInside(ptPlus[k].x, ptPlus[k].y, rectInfo[j].top, rectInfo[j].left, rectInfo[j].right, rectInfo[j].bottom)) {
+                                svg.append('svg:foreignObject')
+                                    .attr("width", 100)
+                                    .attr("height", 100)
+                                    .attr("x", ptPlus[k].x)
+                                    .attr("y", ptPlus[k].y)
+                                    .style("font-size", 25)
+                                    .append("xhtml:body")
+                                    .html('<i class="fas fa-plus"></i>');   
+                            }
+                    }
+                group.append("text").attr("dy", function(d){
+                        return d.data.r/2 + 10 + "px";
+                    })
+                    .style("text-anchor", "middle")
+                    .text(function(d, i ) {
+                        if( d.data.label )
+                            return d.data.label;
+                        return "";
+                    })
+                    .attr("font-size", function(d){ return d.data.r/3; });
+            d3.select(self.frameElement).style("height", diameter + "px");
+        });
+    </script>
+    <body>
+        <svg>
+            <defs>
+                <filter id="f1" x="0" y="0" width="200%" height="200%">
+                <feOffset result="offOut" in="SourceGraphic" dx="20" dy="20" />
+                <feGaussianBlur result="blurOut" in="offOut" stdDeviation="5" />
+                <feBlend in="SourceGraphic" in2="blurOut" mode="normal" />
+                </filter>
+            </defs>
+            <defs>
+                <marker id="Triangle"
+                    viewBox="0 0 10 10" refX="0" refY="5" 
+                    markerUnits="strokeWidth"
+                    markerWidth="8" markerHeight="12"
+                    orient="auto">
+                    <path d="M 0 0 L 10 5 L 0 10 z" />
+                </marker>
+            </defs>
+            Sorry, your browser does not support inline SVG.
+        </svg>
+    </body>
+</html>
