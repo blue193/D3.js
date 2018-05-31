@@ -10,30 +10,35 @@
                 src: url('fonts/Honeyquick/honeyquick.svg') format('svg');
                 src: url('fonts/Honeyquick/honeyquick.woff') format('woff');
             }
+            @font-face {
+                font-family: GraublauWeb;
+                src: url("fonts/HelveticaMediumCondensedPlain.otf") format("opentype");
+            }
             .rectGroup {
                 font-family: myFirstFont;
             }
             .material-icons.md-18 { font-size: 45px; }
+
         </style>
-        <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
         <script defer src="https://use.fontawesome.com/releases/v5.0.6/js/all.js"></script>
         <script src="https://d3js.org/d3.v3.min.js"></script>
-        <script src="https://d3js.org/d3.v4.min.js"></script> -->
-        <link rel="stylesheet" href="css/font-awesome.css">
+        <script src="https://d3js.org/d3.v4.min.js"></script>
+        <!-- <link rel="stylesheet" href="css/font-awesome.css">
         <script defer src="js/all.js"></script>
         <script src="js/d3.v3.min.js"></script>
-        <script src="js/d3.v4.min.js"></script>
+        <script src="js/d3.v4.min.js"></script> -->
     </head>
     <script type="text/javascript">
         dataset = [];
         imageRadius = 32;
-        distance = 130;
+        distance = 140;
         diameter = 1500;
-        firstImgRadius = 207;
+        firstImgRadius = 260;
         rectInfo = [];
         ptPlus = [];
         posPlus = [];
-        filterRadius = 200;
+        filterRadius = 130;
 
         function calcOffset() {
             // return random integer from -1, 0, 1
@@ -100,12 +105,12 @@
                 }
 
                 if ( index == "picture") {
-                    innArr.push({"image":data[index], "r":firstImgRadius, "Count": 750});
+                    innArr.push({"image":data[index], "r":firstImgRadius, "Count": 800});
                     continue;
                 }
                 for (var j = 0; j < data[index].length; j++){
                     data[index][j]['type'] = index;
-                    data[index][j]['r'] = (4.5 + Math.random() * 1.5 ) * imageRadius;
+                    data[index][j]['r'] = (4.1 + Math.random() * 1.5 ) * imageRadius;
                     data[index][j]['Count'] = 400 + distance*j;
                     innArr.push(data[index][j]);
                 }
@@ -113,16 +118,16 @@
             Object.assign(dataset,  {["children"]: innArr} );
             var color = d3.scaleOrdinal(d3.schemeCategory20);
             var bubble = d3.pack(dataset)
-                .size([diameter , diameter])
-                .padding( 30 );
+                .size([diameter*1.1 , diameter*1.1])
+                .padding( 10 );
             var lineFunction = d3.svg.line()
                             .x(function(d) { return d.x; })
                             .y(function(d) { return d.y; })
                             .interpolate("cardinal");
             var svg = d3.select("body")
                             .append("svg")
-                                .attr("width", diameter)
-                                .attr("height", diameter)
+                                .attr("width", diameter*1.1)
+                                .attr("height", diameter*1.1)
                                 .attr("class", "bubble");
             
             var nodes = d3.hierarchy(dataset)
@@ -150,7 +155,8 @@
                 var amplitude = 2.5;
                 var increase = Math.PI/2 , counter=Math.PI/2, alpha = 0;
                 radius = calcHypotenuse( lineData[index1-1].x, lineData[index1-1].y, lineData[index2-1].x, lineData[index2-1].y) / 8;
-                for(i=0; i<=140; i+=15){
+                for(i=0; i<=140; i+=15)
+                {
                     deltaX = (lineData[index2-1].x - lineData[index1-1].x) * i / 180;
                     offsetY = (lineData[index2-1].y - lineData[index1-1].y ) / (lineData[index2-1].x - lineData[index1-1].x) * deltaX;
                     deltaY=  Math.sin(counter / amplitude ) * radius + offsetY;
@@ -180,12 +186,13 @@
                     .attr("preserveAspectRatio", "xMidYMid slice")
                     .attr("width", "100%")
                     .attr("height", "100%")
-                    .append("image")
+                    .append("svg:image")
                         .attr("xlink:href", function( d ){ return d.data.image })
                         .attr("x", 0)
                         .attr("y", 0)
                         .attr("width", "1")
-                        .attr("height", "1");
+                        .attr("height", "1")
+                        .style("border", "2px solid red");
 
             // TODO: Drawing elements and shapes
             var group = node.append("g")
@@ -223,10 +230,6 @@
                     .on("click", function(d){
                         if( typeof d.data.link !== "undefined" )
                             window.location.href = d.data.link;
-                    })
-                    .on("mouseenter", function(d) {
-                        console.log("mouseenter");
-                        this.parentElement.appendChild(this);
                     });
                     
                     dataLength = lineData.length;
@@ -252,7 +255,7 @@
                                 ptPlus.push(p_pos);
                             }
                     
-                    //  maxRadius: Maximum radius of every rects
+                    //  maxRadius: Maximum radius among every rects
                     var maxRadius = Math.sqrt(2)*firstImgRadius;
                     for (var a = 0; a < dataLength; a ++) {
                         r = rectInfo[a].rd;
@@ -264,7 +267,7 @@
                     maxRadius /= 2;
                     maxRadius += 10;
                     
-                    //  fPlus: filter all plus points that is outside maxRaduis size
+                    //  fPlus: filter all plus points that is outside maxRaduis
                     fPlus = ptPlus.filter(element => {
                         let flag = false;
                         for (var c = 0; c < dataLength; c ++) 
@@ -312,28 +315,31 @@
                     nPlus = Math.floor(dataLength/4);
                     
                     //  decide direction to distribute plus points: from inside or outside
-                    for (var k = 0; k < Math.floor(nPlus/2); k++)
-                    {
-                        svg.append('svg:foreignObject')
-                            .attr("width", 100)
-                            .attr("height", 100)
-                            .attr("x", posPlus[k].x)
-                            .attr("y", posPlus[k].y)
-                            .style("font-size", 25)
-                            .append("xhtml:body")
-                            .html('<i class="fas fa-plus"></i>');
+                    if (posPlus.length != 0) {
+                        for (var k = 0; k < Math.floor(nPlus/2); k++)
+                        {
+                            svg.append('svg:foreignObject')
+                                .attr("width", 50)
+                                .attr("height", 50)
+                                .attr("x", posPlus[k].x)
+                                .attr("y", posPlus[k].y)
+                                .style("font-size", 25)
+                                .append("xhtml:body")
+                                .html('<i class="fas fa-plus"></i>');
+                        }
+                        for (var k = 0; k < Math.ceil(nPlus/2); k++)
+                        {
+                            svg.append('svg:foreignObject')
+                                .attr("width", 50)
+                                .attr("height", 50)
+                                .attr("x", posPlus[posPlus.length - k - 1].x)
+                                .attr("y", posPlus[posPlus.length - k - 1].y)
+                                .style("font-size", 25)
+                                .append("xhtml:body")
+                                .html('<i class="fas fa-plus"></i>');
+                        }
                     }
-                    for (var k = 0; k < Math.ceil(nPlus/2); k++)
-                    {
-                        svg.append('svg:foreignObject')
-                            .attr("width", 100)
-                            .attr("height", 100)
-                            .attr("x", posPlus[posPlus.length - k - 1].x)
-                            .attr("y", posPlus[posPlus.length - k - 1].y)
-                            .style("font-size", 25)
-                            .append("xhtml:body")
-                            .html('<i class="fas fa-plus"></i>');
-                    }
+                    
                 group.append("text").attr("dy", function(d){
                         return d.data.r/2 + 10 + "px";
                     })
@@ -352,8 +358,8 @@
             <!-- define shadow -->
             <defs>
                 <filter id="f3" x="0" y="0" width="200%" height="200%">
-                    <feOffset result="offOut" in="SourceAlpha" dx="20" dy="20" />
-                    <feGaussianBlur result="blurOut" in="offOut" stdDeviation="14" />
+                    <feOffset result="offOut" in="SourceGraphic" dx="7" dy="7" />
+                    <feGaussianBlur result="blurOut" in="offOut" stdDeviation="8" />
                     <feBlend in="SourceGraphic" in2="blurOut" mode="normal" />
                 </filter>
             </defs>
