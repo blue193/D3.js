@@ -17,7 +17,6 @@
             .rectGroup {
                 font-family: myFirstFont;
             }
-            .material-icons.md-18 { font-size: 45px; }
 
         </style>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
@@ -31,14 +30,14 @@
     </head>
     <script type="text/javascript">
         dataset = [];
-        imageRadius = 32;
-        distance = 140;
-        diameter = 1500;
-        firstImgRadius = 260;
+        imageRadius = 31;
+        distance = 84;
+        diameter = 1065;
+        firstImgRadius = 170;
         rectInfo = [];
         ptPlus = [];
         posPlus = [];
-        filterRadius = 130;
+        filterRadius = 55;
 
         function calcOffset() {
             // return random integer from -1, 0, 1
@@ -110,15 +109,15 @@
                 }
                 for (var j = 0; j < data[index].length; j++){
                     data[index][j]['type'] = index;
-                    data[index][j]['r'] = (4.1 + Math.random() * 1.5 ) * imageRadius;
-                    data[index][j]['Count'] = 400 + distance*j;
+                    data[index][j]['r'] = (3 + Math.random() * 1.1) * imageRadius;
+                    data[index][j]['Count'] = 350 + distance*j;
                     innArr.push(data[index][j]);
                 }
             }
             Object.assign(dataset,  {["children"]: innArr} );
             var color = d3.scaleOrdinal(d3.schemeCategory20);
             var bubble = d3.pack(dataset)
-                .size([diameter*1.1 , diameter*1.1])
+                .size([diameter*1.5 , diameter])
                 .padding( 10 );
             var lineFunction = d3.svg.line()
                             .x(function(d) { return d.x; })
@@ -126,8 +125,8 @@
                             .interpolate("cardinal");
             var svg = d3.select("body")
                             .append("svg")
-                                .attr("width", diameter*1.1)
-                                .attr("height", diameter*1.1)
+                                .attr("width", diameter*1.5)
+                                .attr("height", diameter)
                                 .attr("class", "bubble");
             
             var nodes = d3.hierarchy(dataset)
@@ -170,10 +169,10 @@
                 svg.append("path")
                     .attr("d", lineFunction(drawLine))
                     .attr("stroke-linecap", "round")
-                    .attr("stroke-dasharray", "5,5,5")
-                    .attr("stroke", "#7a7a7a")
+                    .attr("stroke-dasharray", "4,4,4")
+                    .attr("stroke", "gray")
                     .attr("stroke-width", 2)
-                    .attr('stroke-opacity', 0.8)
+                    .attr('stroke-opacity', 0.7)
                     .attr("pointer-events", "none")
                     .attr("fill", "none")
                     .attr("marker-end", function(d) { return "url(#Triangle)"});
@@ -257,7 +256,7 @@
                     
                     //  maxRadius: Maximum radius among every rects
                     var maxRadius = Math.sqrt(2)*firstImgRadius;
-                    for (var a = 0; a < dataLength; a ++) {
+                    for (var a = 1; a < dataLength; a ++) {
                         r = rectInfo[a].rd;
                         if (r > maxRadius) {
                             maxRadius = r;
@@ -271,7 +270,12 @@
                     fPlus = ptPlus.filter(element => {
                         let flag = false;
                         for (var c = 0; c < dataLength; c ++) 
-                            flag = flag || (calcHypotenuse(element.x, element.y, lineData[c].x, lineData[c].y) < maxRadius);
+                        {
+                            if (c == 0)
+                                flag = flag || (calcHypotenuse(element.x, element.y, lineData[c].x, lineData[c].y) < maxRadius);
+                            else
+                                flag = flag || (calcHypotenuse(element.x, element.y, lineData[c].x, lineData[c].y) < maxRadius * 0.7);
+                        }
                         return !flag;
                     });
                     
@@ -323,7 +327,7 @@
                                 .attr("height", 50)
                                 .attr("x", posPlus[k].x)
                                 .attr("y", posPlus[k].y)
-                                .style("font-size", 25)
+                                .style("font-size", 20)
                                 .append("xhtml:body")
                                 .html('<i class="fas fa-plus"></i>');
                         }
@@ -334,7 +338,7 @@
                                 .attr("height", 50)
                                 .attr("x", posPlus[posPlus.length - k - 1].x)
                                 .attr("y", posPlus[posPlus.length - k - 1].y)
-                                .style("font-size", 25)
+                                .style("font-size", 20)
                                 .append("xhtml:body")
                                 .html('<i class="fas fa-plus"></i>');
                         }
@@ -354,11 +358,12 @@
         });
     </script>
     <body>
-        <svg>
+        <svg style="height: 0px;">
             <!-- define shadow -->
             <defs>
                 <filter id="f3" x="0" y="0" width="200%" height="200%">
                     <feOffset result="offOut" in="SourceGraphic" dx="7" dy="7" />
+                    <feFuncA type="linear" slope="0.02"/>
                     <feGaussianBlur result="blurOut" in="offOut" stdDeviation="8" />
                     <feBlend in="SourceGraphic" in2="blurOut" mode="normal" />
                 </filter>
