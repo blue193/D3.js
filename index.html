@@ -6,7 +6,7 @@
         <style type="text/css" media="screen">
             @font-face {
                 font-family: myFirstFont;
-                src: url("fonts/Honeyquik/honeyquick.ttf")format('ttf');
+                src: url("fonts/Honeyquick/honeyquick.ttf")format('ttf');
                 src: url('fonts/Honeyquick/honeyquick.svg') format('svg');
                 src: url('fonts/Honeyquick/honeyquick.woff') format('woff');
             }
@@ -23,112 +23,49 @@
         <script defer src="https://use.fontawesome.com/releases/v5.0.6/js/all.js"></script>
         <script src="https://d3js.org/d3.v3.min.js"></script>
         <script src="https://d3js.org/d3.v4.min.js"></script>
-        <!-- <link rel="stylesheet" href="css/font-awesome.css">
-        <script defer src="js/all.js"></script>
-        <script src="js/d3.v3.min.js"></script>
-        <script src="js/d3.v4.min.js"></script> -->
+
     </head>
+    <script src = "lib/misc.js" type="text/javascript"></script>
     <script type="text/javascript">
-        dataset = [];
-        imageRadius = 31;
-        distance = 84;
-        diameter = 1065;
-        firstImgRadius = 170;
-        rectInfo = [];
-        ptPlus = [];
-        posPlus = [];
-        filterRadius = 55;
-
-        function calcOffset() {
-            // return random integer from -1, 0, 1
-            rand = Math.floor(Math.random()*7)%3;
-            return rand - 1;
-        }
-
-        function calcHypotenuse(x1, y1, x2, y2) {
-            return Math.sqrt((x2-x1) * (x2-x1) + (y2-y1) * (y2-y1));
-        }
-
-        function is_in_triangle(px,py,ax,ay,bx,by,cx,cy){
-
-            var v0 = [cx-ax,cy-ay];
-            var v1 = [bx-ax,by-ay];
-            var v2 = [px-ax,py-ay];
-
-            var dot00 = (v0[0]*v0[0]) + (v0[1]*v0[1]);
-            var dot01 = (v0[0]*v1[0]) + (v0[1]*v1[1]);
-            var dot02 = (v0[0]*v2[0]) + (v0[1]*v2[1]);
-            var dot11 = (v1[0]*v1[0]) + (v1[1]*v1[1]);
-            var dot12 = (v1[0]*v2[0]) + (v1[1]*v2[1]);
-
-            var invDenom = 1/ (dot00 * dot11 - dot01 * dot01);
-
-            var u = (dot11 * dot02 - dot01 * dot12) * invDenom;
-            var v = (dot00 * dot12 - dot01 * dot02) * invDenom;
-
-            return ((u >= 0) && (v >= 0) && (u + v < 1));
-        }
-
-        function isInside(x, y, z1, z2, z3, z4) {
-            x1 = Math.min(z1, z3);
-            x2 = Math.max(z1, z3);
-            y1 = Math.min(z2, z4);
-            y2 = Math.max(z2, z4);
-            if ((x1 <= x ) && ( x <= x2) && (y1 <= y) && (y <= y2)) {
-                return true;
-            } else {
-                return false;
-            };
-        };
-
-        Math.dsin = function() {
-            var piRatio = Math.PI / 180;
-            return function dsin(degrees) {
-                return Math.sin(degrees * piRatio);
-            };
-        }();
-
-        d3.json("data/example1.json", function(error, data) {
-            if (error) throw error;
-            var innArr = [], router = [], lineData = []
-            data_keys = Object.keys(data);
-
-            for (var i = 0; i < data_keys.length; i++){
-                let index = data_keys[i];
-
-                if( index == "router" ){
-                    var n_router = data[index].length;
-                    for (var p = 0; p < n_router; p++)
-                        router.push(data[index][p]);
-                    continue;
-                }
-
-                if ( index == "picture") {
-                    innArr.push({"image":data[index], "r":firstImgRadius, "Count": 800});
-                    continue;
-                }
-                for (var j = 0; j < data[index].length; j++){
-                    data[index][j]['type'] = index;
-                    data[index][j]['r'] = (3 + Math.random() * 1.1) * imageRadius;
-                    data[index][j]['Count'] = 350 + distance*j;
-                    innArr.push(data[index][j]);
-                }
-            }
-            Object.assign(dataset,  {["children"]: innArr} );
+        function waitImageSize() {
+            var loaded = true;
+            var dataset = {};
+            innArr.forEach (element => loaded = (loaded && !(element.size.width == 0 || element.size.height == 0)))
+            if (!loaded)
+                return;
+            clearInterval(imageLoader);
+            var res = calcImagePos(innArr), ptPos = [], posPlus = [];
+            res.forEach(element => {
+                element.center.x *= 3;
+                element.center.y *= 3;
+                element.size.width *= 3;
+                element.size.height *= 3;
+            })
+            lineData.forEach(element => element.forEach(item => {
+                item.x *= 3;
+                item.y *= 3;
+            }))
+            res.forEach(function(elem, idx) {
+                if (idx < innArr.length)
+                    ptPos.unshift(elem);
+                else
+                    posPlus.push(elem);
+            })
+            
+            Object.assign(dataset,  {["children"]: ptPos} );
             var color = d3.scaleOrdinal(d3.schemeCategory20);
             var bubble = d3.pack(dataset)
-                .size([diameter*1.5 , diameter])
+                .size([1000 , 1000])
                 .padding( 10 );
             var lineFunction = d3.svg.line()
-                            .x(function(d) { return d.x; })
-                            .y(function(d) { return d.y; })
-                            .interpolate("cardinal");
+                .x(function(d) { return d.x; })
+                .y(function(d) { return d.y; })
+                .interpolate("cardinal");
             var svg = d3.select("body")
-                            .append("svg")
-                                .attr("width", diameter*1.5)
-                                .attr("height", diameter)
-                                .attr("class", "bubble");
-            
+                .append("svg")
+                .attr("width", "100vw")
+                .attr("height", "66vw")
+                .attr("class", "bubble");
             var nodes = d3.hierarchy(dataset)
             .sum(function(d) {
                 return d.Count+(Math.floor(Math.random() * 80))*10;
@@ -139,44 +76,24 @@
                 .enter()
                 .filter(function(d){ return  !d.children })
                 .append("g")
-                .attr("class", "node")
-                .attr("transform", function(d) {
-                    lineData.push({"x":d.x, "y":d.y});
-                    return "translate(" + d.x + "," + d.y + ")";
-                });
-            
+                .attr("class", "node");
             // TODO: Draw line
-            for (var k = 0; k < router.length; k++)
-            {
-                var drawLine = [];
-                var index1 = router[k].start;
-                var index2 = router[k].end;
-                var amplitude = 2.5;
-                var increase = Math.PI/2 , counter=Math.PI/2, alpha = 0;
-                radius = calcHypotenuse( lineData[index1-1].x, lineData[index1-1].y, lineData[index2-1].x, lineData[index2-1].y) / 8;
-                for(i=0; i<=140; i+=15)
-                {
-                    deltaX = (lineData[index2-1].x - lineData[index1-1].x) * i / 180;
-                    offsetY = (lineData[index2-1].y - lineData[index1-1].y ) / (lineData[index2-1].x - lineData[index1-1].x) * deltaX;
-                    deltaY=  Math.sin(counter / amplitude ) * radius + offsetY;
-                    counter += increase ;
-                    let direction = 1;
-                    if(lineData[index2-1].x < lineData[index1-1].x )
-                        direction = -1;
-                    middle = {x: lineData[index1-1].x + deltaX, y: lineData[index1-1].y + deltaY};
-                    drawLine.push( middle);
-                }
+            lineData.forEach(element => {
                 svg.append("path")
-                    .attr("d", lineFunction(drawLine))
+                    .attr("d", lineFunction(element))
                     .attr("stroke-linecap", "round")
                     .attr("stroke-dasharray", "4,4,4")
                     .attr("stroke", "gray")
                     .attr("stroke-width", 2)
-                    .attr('stroke-opacity', 0.7)
+                    .attr('stroke-opacity', 0.5)
                     .attr("pointer-events", "none")
                     .attr("fill", "none")
                     .attr("marker-end", function(d) { return "url(#Triangle)"});
-            }
+            })
+
+            // TODO: Drawing elements and shapes
+            var group = node.append("g")
+                .attr("class", "rectGroup");
 
             // TODO: Appending pattern
             defs = node.append('pattern')
@@ -186,175 +103,131 @@
                     .attr("width", "100%")
                     .attr("height", "100%")
                     .append("svg:image")
-                        .attr("xlink:href", function( d ){ return d.data.image })
+                        .attr("xlink:href", function( d ){ return d.data.info.image })
                         .attr("x", 0)
                         .attr("y", 0)
                         .attr("width", "1")
                         .attr("height", "1")
                         .style("border", "2px solid red");
 
-            // TODO: Drawing elements and shapes
-            var group = node.append("g")
-                .attr("class", "rectGroup")
-                .attr("transform", function(d){ return "rotate("+ (Math.random() * 50-30) +")"});
-                group.append("rect")
-                    .attr("width", function(d){ return d.data.r - 10; })
-                    .attr("height",function(d){ return d.data.r - 10; })
-                    .attr("x", function(d){ return -d.data.r/2 ; })
-                    .attr("y", function(d){ return -d.data.r/2 ; })
-                    .style("fill", function(d,i) {
-                        rect = this.getBoundingClientRect();
-                        rectCenter = {x: (rect.left + rect.right)/ 2 , y: (rect.top + rect.bottom)/2,
-                                        left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom,
-                                        rd: Math.sqrt(0.5) * (rect.right - rect.left) };
-                        // rectInfo is rect info such as center and width and height
-                        rectInfo.push(rectCenter);
-                        if( d.data.image ){
-                            url = "url('#img_"+ i +"')";
-                            return url;}
-                        else
-                            return color(i);
-                    })
-                    .style("cursor", function(d){
-                        if( typeof d.data.link !== "undefined" )
-                            return "pointer";
-                        else
-                            return "default";})
-                    .style("filter", function(d) {
-                        if (typeof d.data.label == "undefined")
-                         return "url(#f3)";
-                        else
-                            return ;
-                    })
-                    .on("click", function(d){
-                        if( typeof d.data.link !== "undefined" )
-                            window.location.href = d.data.link;
-                    });
-                    
-                    dataLength = lineData.length;
-                    
-                    // ptPlus: weight center of every possible triangles
-                    for (var i = 1; i < dataLength; i ++)
-                        for (var j = i + 1; j < dataLength; j ++)
-                            for (var k = j + 1; k < dataLength; k ++)
-                            {
-                                let eFlag = true;
-                                for (var l = 0; l < dataLength; l ++)
-                                {
-                                    if (l == i || l == j || l == k)
-                                        continue;
-                                    eFlag = eFlag && !is_in_triangle(lineData[l].x, lineData[l].y,
-                                        lineData[i].x, lineData[i].y,
-                                        lineData[j].x, lineData[j].y,
-                                        lineData[k].x, lineData[k].y);
-                                }
-                                if (!eFlag)
-                                    continue;
-                                p_pos = {x: (lineData[i].x + lineData[j].x + lineData[k].x) / 3, y: (lineData[i].y + lineData[j].y + lineData[k].y) / 3};
-                                ptPlus.push(p_pos);
-                            }
-                    
-                    //  maxRadius: Maximum radius among every rects
-                    var maxRadius = Math.sqrt(2)*firstImgRadius;
-                    for (var a = 1; a < dataLength; a ++) {
-                        r = rectInfo[a].rd;
-                        if (r > maxRadius) {
-                            maxRadius = r;
-                        }
+            group.append("rect")
+                .attr("width", function(d){ return Math.max(d.data.size.width, d.data.size.height); })
+                .attr("height",function(d){ return Math.max(d.data.size.width, d.data.size.height); })
+                .attr("transform-origin", function(d) {
+                    var tmp = Math.max(d.data.size.width, d.data.size.height);
+                    return "" + tmp / 2 + "px " + tmp / 2 + "px"; })
+                .attr("transform", function(d) {
+                    return "translate(" + (- d.data.size.width / 2) + "," + (- d.data.size.width / 2) + ")"
+                                        + "translate(" + d.data.center.x + "," + d.data.center.y + ")"
+                                        + "rotate("+ (d.data.angle) +")"
+                                    })
+                .attr("x", function(d){ return 0 ; })
+                .attr("y", function(d){ return 0 ; })
+                .style("fill", function(d,i) {
+                    rect = this.getBoundingClientRect();
+                    rectCenter = {x: (rect.left + rect.right)/ 2 , y: (rect.top + rect.bottom)/2,
+                                    left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom,
+                                    rd: Math.sqrt(0.5) * (rect.right - rect.left) };
+                    // rectInfo is rect info such as center and width and height
+                    if( d.data.info.image ){
+                        url = "url('#img_"+ i +"')";
+                        return url;
                     }
-                    //
-                    maxRadius /= 2;
-                    maxRadius += 10;
+                    else
+                        return color(i);
+                })
+                .style("cursor", function(d){
+                    if( typeof d.data.info.link !== "undefined" )
+                        return "pointer";
+                    else
+                        return "default";})
+                .style("filter", function(d) {
+                    if (typeof d.data.info.label == "undefined")
+                        return "url(#f3)";
+                    else
+                        return ;
+                })
+                .on("click", function(d){
+                    if( typeof d.data.info.link !== "undefined" )
+                        window.location.href = d.data.info.link;
+                });
                     
-                    //  fPlus: filter all plus points that is outside maxRaduis
-                    fPlus = ptPlus.filter(element => {
-                        let flag = false;
-                        for (var c = 0; c < dataLength; c ++) 
-                        {
-                            if (c == 0)
-                                flag = flag || (calcHypotenuse(element.x, element.y, lineData[c].x, lineData[c].y) < maxRadius);
-                            else
-                                flag = flag || (calcHypotenuse(element.x, element.y, lineData[c].x, lineData[c].y) < maxRadius * 0.7);
-                        }
-                        return !flag;
-                    });
-                    
-                    //  calc distance between plus points and rect points and get minmum radius between every plus point and rect
-                    fPlus.forEach(element => {
-                        minRadius = calcHypotenuse(element.x, element.y, lineData[0].x, lineData[0].y);
-                        lineData.forEach(item => {
-                            if (minRadius < calcHypotenuse(element.x, element.y, item.x, item.y))
-                                minRadius = calcHypotenuse(element.x, element.y, item.x, item.y);
-                        });
-                        element["minRD"] = minRadius;
-                    });
-                    
-                    //  sort plus points by minRadius in order to decrease
-                    fPlus.sort(function(a, b){return b.minRD - a.minRD;});
-                    
-                    //  filter plus points by flexible radius
-                    for (i = 0; i < fPlus.length; i ++)
-                    {
-                        let flag = false;
-                        posPlus.forEach( item => flag = flag || (calcHypotenuse(item.x, item.y, fPlus[i].x, fPlus[i].y)) < filterRadius);
-                        if (flag)
-                            continue;
-                        posPlus[posPlus.length] = fPlus[i];
-                    }
-                    
-                    //  Adjust distribution of plus points on the land
-                    //  calc center position of whole filtered plus points
-                    centerPt = {x: 0, y: 0};
-                    lineData.forEach(item => {
-                            centerPt.x += item.x;
-                            centerPt.y += item.y;
-                        });
-                    centerPt.x /= lineData.length;
-                    centerPt.y /= lineData.length;
-                    
-                    //  sort plus points by center length of all filtered plus points
-                    posPlus.forEach(item => item["cen"] = calcHypotenuse(centerPt.x, centerPt.y, item.x, item.y));
-                    posPlus.sort(function(a, b){return a.cen - b.cen;});
-                    
-                    nPlus = Math.floor(dataLength/4);
-                    
-                    //  decide direction to distribute plus points: from inside or outside
-                    if (posPlus.length != 0) {
-                        for (var k = 0; k < Math.floor(nPlus/2); k++)
-                        {
-                            svg.append('svg:foreignObject')
-                                .attr("width", 50)
-                                .attr("height", 50)
-                                .attr("x", posPlus[k].x)
-                                .attr("y", posPlus[k].y)
-                                .style("font-size", 20)
-                                .append("xhtml:body")
-                                .html('<i class="fas fa-plus"></i>');
-                        }
-                        for (var k = 0; k < Math.ceil(nPlus/2); k++)
-                        {
-                            svg.append('svg:foreignObject')
-                                .attr("width", 50)
-                                .attr("height", 50)
-                                .attr("x", posPlus[posPlus.length - k - 1].x)
-                                .attr("y", posPlus[posPlus.length - k - 1].y)
-                                .style("font-size", 20)
-                                .append("xhtml:body")
-                                .html('<i class="fas fa-plus"></i>');
-                        }
-                    }
-                    
-                group.append("text").attr("dy", function(d){
-                        return d.data.r/2 + 10 + "px";
+            group.append("text")
+                .attr("transform-origin", function(d) {
+                    var tmp = Math.max(d.data.size.width, d.data.size.height);
+                    return "" + tmp / 2 + "px " + tmp / 2 + "px"; 
                     })
-                    .style("text-anchor", "middle")
-                    .text(function(d, i ) {
-                        if( d.data.label )
-                            return d.data.label;
-                        return "";
+                .attr("transform", function(d) {
+                    return "translate(" + (- d.data.size.width / 2) + "," + (- d.data.size.width / 2) + ")"
+                        + "translate(" + d.data.center.x + "," + d.data.center.y + ")"
+                        + "rotate("+ (d.data.angle) +")"
                     })
-                    .attr("font-size", function(d){ return d.data.r/3; });
-            d3.select(self.frameElement).style("height", diameter + "px");
+                .attr("dx", function(d){
+                    return d.data.size.width/2 + "px";
+                })
+                .attr("dy", function(d){
+                    return d.data.size.height + 10 + "px";
+                })
+                .style("text-anchor", "middle")
+                .text(function(d, i ) {
+                    if( d.data.info.label )
+                        return d.data.info.label;
+                    return "";
+                })
+                .attr("font-size", function(d){ return d.data.size.width/2; });
+                
+            //  decide direction to distribute plus points: from inside or outside
+            posPlus.sort(function(a, b){
+                var len = calcHypotenuse(a.center, ptPos[ptPos.length - 1].center) - calcHypotenuse(b.center, ptPos[ptPos.length - 1].center);
+                return len;
+            })
+            posPlus.splice(Math.floor(posPlus.length / 2), Math.ceil(posPlus.length / 2));
+
+            posPlus.sort(function(a, b){
+                return b.lim - a.lim;
+            })
+            posPlus.splice(Math.ceil(posPlus.length / 2), Math.floor(posPlus.length / 2));
+
+            if (posPlus.length != 0) {
+                for (var k = 0; k < posPlus.length; k++)
+                {
+                    var idx = k;
+                    svg.append('svg:foreignObject')
+                        .attr("width", 50)
+                        .attr("height", 50)
+                        .attr("x", posPlus[idx].center.x)
+                        .attr("y", posPlus[idx].center.y)
+                        .style("font-size", 20)
+                        .append("xhtml:body")
+                        .html('<i class="fas fa-plus"></i>');
+                }
+            }
+            d3.select(self.frameElement).style("height", size.width * 3 + "px");
+        }
+
+        d3.json("data/example1.json", function(error, data) {
+            if (error) throw error;
+            for (var key in data)
+            {
+                if( key == "router" )
+                {
+                    router.push(data[key]);
+                    continue;
+                }
+                if ( key == "picture")
+                {
+                    innArr.push({ "image" : data[key],
+                        "size" : imageSize(data[key])})
+                    continue;
+                }
+                data[key].forEach(element => { innArr.push(
+                        { "type" : key,
+                        "image" : element.image,
+                        "link" : element.link,
+                        "size" : imageSize(element.image),
+                        "label" : element.label })});
+            }
+            imageLoader = setInterval(waitImageSize, 500);
         });
     </script>
     <body>
